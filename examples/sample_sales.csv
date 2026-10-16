@@ -1,0 +1,12 @@
+OrderID,CustomerName,Age,Email,Product,UnitPrice,Quantity,OrderDate
+ORD-2001,James Wilson,31,james.wilson@corp.org,Wireless Mouse,29.99,2,2026-02-01
+ORD-2002,Maria Garcia,27,maria.garcia@tech.com,Ergonomic Chair,249.00,1,2026-02-01
+ORD-2003,David Lee,,david@lee.net,USB Cable,12.50,4,2026-02-02
+ORD-2004,Sarah Miller,45,invalid-email,Mechanical Keyboard,-10.00,1,2026-02-03
+ORD-2005,Alex Chen,-3,alex@design.co,Monitor Stand,45.00,2,bad-date-format
+ORD-2001,James Wilson,31,james.wilson@corp.org,Wireless Mouse,29.99,2,2026-02-01
+ORD-2006,Emily Brown,24,emily@shop.com,,15.00,3,2026-02-04
+ORD-2007,Robert Taylor,62,robert@domain.org,Desk Lamp,N/A,1,2026-02-05
+ORD-2008,Lisa White,29,lisa@white.net,Noise Cancelling Headset,189.95,1,2026-02-05
+ORD-2008,Lisa White,29,lisa@white.net,Noise Cancelling Headset,189.95,1,2026-02-05
+ORD-2009,Thomas Green,53,thomas@green.io,Webcam 1080p,69.99,1,2026-02-06

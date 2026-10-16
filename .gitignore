@@ -1,0 +1,23 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Instance & data
+instance/
+temp_uploads/
+*.sqlite
+*.db
+memory.env
+
+# OS files
+.DS_Store
+Thumbs.db
