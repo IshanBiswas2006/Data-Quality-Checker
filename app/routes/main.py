@@ -38,6 +38,9 @@ Allow: /about
 Allow: /faq
 Allow: /privacy
 Allow: /terms
+Allow: /login
+Allow: /signup
+Disallow: /profile
 Disallow: /upload
 Disallow: /results/
 Disallow: /clean/
@@ -69,6 +72,16 @@ def sitemap_xml():
     <loc>{base_url}/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>{base_url}/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>{base_url}/signup</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>{base_url}/privacy</loc>

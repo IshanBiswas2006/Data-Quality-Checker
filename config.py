@@ -11,6 +11,7 @@ class Config:
     PREVIEW_ROWS = int(os.environ.get("PREVIEW_ROWS", 10))
     MAX_INSPECT_ROWS = int(os.environ.get("MAX_INSPECT_ROWS", 50))
     SESSION_MAX_AGE_SECONDS = int(os.environ.get("SESSION_MAX_AGE_SECONDS", 7200))  # 2 hours
+    USERS_DB_PATH = os.environ.get("USERS_DB_PATH", str(BASE_DIR / "instance" / "users.db"))
     
     # Cookie & Session Security
     SESSION_COOKIE_HTTPONLY = True
@@ -41,6 +42,7 @@ class TestingConfig(Config):
     DEBUG = False
     TESTING = True
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    USERS_DB_PATH = str(BASE_DIR / "instance" / "test_users.db")
 
 class ProductionConfig(Config):
     DEBUG = False

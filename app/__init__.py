@@ -16,13 +16,36 @@ def create_app(config_name=None, config_class=None) -> Flask:
     # Ensure upload folder exists
     os.makedirs(app.config.get("UPLOAD_FOLDER", "temp_uploads"), exist_ok=True)
     
+    # Initialize user database
+    from app.services.user_service import init_db, get_user_by_id
+    import secrets
+    init_db(app.config.get("USERS_DB_PATH"))
+    
     # Register blueprints
-    from app.routes import bp_main, bp_upload, bp_analysis, bp_cleaning, bp_download
+    from app.routes import bp_main, bp_upload, bp_analysis, bp_cleaning, bp_download, bp_auth
     app.register_blueprint(bp_main)
     app.register_blueprint(bp_upload)
     app.register_blueprint(bp_analysis)
     app.register_blueprint(bp_cleaning)
     app.register_blueprint(bp_download)
+    app.register_blueprint(bp_auth)
+    
+    # Set up user authentication session and CSRF on every request
+    from flask import g, session
+    
+    @app.before_request
+    def load_auth_context():
+        if "csrf_token" not in session:
+            session["csrf_token"] = secrets.token_hex(16)
+        user_id = session.get("user_id")
+        g.current_user = get_user_by_id(user_id) if user_id else None
+
+    @app.context_processor
+    def inject_auth_context():
+        return {
+            "current_user": getattr(g, "current_user", None),
+            "csrf_token": session.get("csrf_token", "")
+        }
     
     # Apply security headers to every response
     @app.after_request

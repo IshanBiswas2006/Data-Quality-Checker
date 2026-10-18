@@ -33,6 +33,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (alert) alert.remove();
     });
   });
+
+  // 3. Dynamic color swatches & avatar badges
+  document.querySelectorAll("[data-color]").forEach((el) => {
+    if (el.dataset.color) el.style.backgroundColor = el.dataset.color;
+  });
 });
 
 // Toast notification utility

@@ -41,9 +41,15 @@ A beginner-to-intermediate Python and Flask web application that enables users t
    - Complete audit trail of all applied operations.
    - Safe CSV download with formula injection protection (DDE sanitization).
 
-7. **Production & Security Hardened**
+7. **User Authentication & Profile Management**
+   - Secure account registration and login powered by salted PBKDF2/scrypt password hashing via `werkzeug.security`.
+   - Dynamic profile navigation: guests see "Log In" and "Sign Up", while authenticated users see their personalized avatar badge and quick profile menu.
+   - User Profile Studio: edit name, bio, email, customize avatar theme colors, update password, and maintain a saved history of inspected datasets.
+   - Non-intrusive access: public browsing, CSV inspection, and cleaning remain open to all users without forced authentication.
+
+8. **Production & Security Hardened**
    - Security headers: `Content-Security-Policy`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`.
-   - Comprehensive pages: Home, Results, Interactive FAQ, Privacy Policy, Terms of Service, Robots.txt, Sitemap.xml, and dedicated 404 handler.
+   - Comprehensive pages: Home, Results, Interactive FAQ, About, Privacy Policy, Terms of Service, Robots.txt, Sitemap.xml, and dedicated 404 handler.
    - Dark and light theme switcher using minimalist design tokens.
 
 ---
@@ -68,6 +74,7 @@ data-quality-checker/
 |   |-- routes/
 |   |   |-- __init__.py         # Blueprints initialization
 |   |   |-- main.py             # Home, About, FAQ, privacy, terms, health, robots, sitemap
+|   |   |-- auth.py             # Sign up, login, logout, profile & password management
 |   |   |-- upload.py           # CSV file upload, validation & rate limiting
 |   |   |-- analysis.py         # Results dashboard and rules validation
 |   |   |-- cleaning.py         # Controlled cleaning operations and reset
@@ -75,6 +82,7 @@ data-quality-checker/
 |   |
 |   |-- services/
 |   |   |-- __init__.py         # Services package
+|   |   |-- user_service.py     # User model, authentication, profile & database operations
 |   |   |-- file_validator.py   # Safe file size and format validation
 |   |   |-- csv_reader.py       # Multi-encoding, delimiter-aware CSV reader
 |   |   |-- quality_analyzer.py # Missing, duplicate, and type analysis
@@ -93,6 +101,10 @@ data-quality-checker/
 |   |   |-- faq.html            # Frequently Asked Questions with accordion
 |   |   |-- privacy.html        # Privacy policy (data handling & retention)
 |   |   |-- terms.html          # Terms of service
+|   |   |-- auth/
+|   |   |   |-- login.html      # User login page
+|   |   |   |-- signup.html     # User registration page
+|   |   |   |-- profile.html    # Profile studio & dataset history
 |   |   |-- errors/
 |   |       |-- 400.html        # Bad request error template
 |   |       |-- 404.html        # Page not found error template
@@ -109,6 +121,7 @@ data-quality-checker/
 |
 |-- tests/
 |   |-- __init__.py             # Tests package
+|   |-- test_auth.py            # Unit & integration tests for authentication and profile
 |   |-- test_file_validator.py  # Unit tests for upload validation
 |   |-- test_quality_analyzer.py# Unit tests for metrics and analysis
 |   |-- test_validation_rules.py# Unit tests for validation engine
@@ -185,7 +198,7 @@ Run the full pytest suite:
 ```bash
 pytest -v
 ```
-All 40 unit, integration, and security tests will execute and confirm file validation, quality analysis, cleaning operations, route behavior, and security protections.
+All 55 unit, integration, and security tests will execute and confirm file validation, quality analysis, cleaning operations, route behavior, authentication, and security protections.
 
 ---
 
