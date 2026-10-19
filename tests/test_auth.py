@@ -418,4 +418,74 @@ def test_login_fails_on_empty_captcha(client):
     assert res.status_code == 400
     assert b"Please complete the security check" in res.data
 
+def test_unauthenticated_analysis_and_cleaning_blocked(client):
+    import pandas as pd
+    df = pd.DataFrame({"colA": [1, 2, 3], "colB": ["x", "y", "z"]})
+    aid = SessionStore.create_session(df, "sample.csv")
+
+    # 1. Accessing results while unauthenticated redirects to /login
+    res_get = client.get(f"/results/{aid}")
+    assert res_get.status_code == 302
+    assert "/login" in res_get.headers["Location"]
+
+    # 2. AJAX results access returns 401
+    res_ajax = client.get(f"/results/{aid}", headers={"X-Requested-With": "XMLHttpRequest"})
+    assert res_ajax.status_code == 401
+    assert not res_ajax.get_json()["success"]
+
+    # 3. Rerun analysis returns 401
+    res_analyze = client.post(f"/analyze/{aid}", headers={"X-Requested-With": "XMLHttpRequest"})
+    assert res_analyze.status_code == 401
+
+    # 4. Clean dataset returns 401
+    res_clean = client.post(f"/clean/{aid}", json={"type": "remove_duplicates"}, headers={"X-Requested-With": "XMLHttpRequest"})
+    assert res_clean.status_code == 401
+
+    # 5. Reset dataset returns 401
+    res_reset = client.post(f"/reset/{aid}", headers={"X-Requested-With": "XMLHttpRequest"})
+    assert res_reset.status_code == 401
+
+    # 6. Download cleaned file redirects to /login
+    res_dl = client.get(f"/download/{aid}")
+    assert res_dl.status_code == 302
+    assert "/login" in res_dl.headers["Location"]
+
+def test_unauthenticated_to_authenticated_upload_flow(client):
+    import io
+    csv_bytes = b"id,val\n1,100\n2,200\n"
+    data = {"file": (io.BytesIO(csv_bytes), "flow_test.csv")}
+
+    # Step 1: Unauthenticated upload attempt is blocked
+    res_unauth = client.post("/upload", data=data, content_type="multipart/form-data")
+    assert res_unauth.status_code == 302
+    assert "/login" in res_unauth.headers["Location"]
+
+    # Step 2: Sign up / Log in
+    client.post("/signup", data={
+        "csrf_token": "test-csrf-token-12345",
+        "name": "Flow User",
+        "email": "flow@example.com",
+        "password": "Password123!",
+        "confirm_password": "Password123!"
+    })
+
+    # Step 3: Now upload succeeds
+    data2 = {"file": (io.BytesIO(csv_bytes), "flow_test.csv")}
+    res_auth = client.post(
+        "/upload",
+        data=data2,
+        content_type="multipart/form-data",
+        headers={"X-Requested-With": "XMLHttpRequest"}
+    )
+    assert res_auth.status_code == 200
+    json_data = res_auth.get_json()
+    assert json_data["success"] is True
+    aid = json_data["analysis_id"]
+
+    # Step 4: Access results successfully
+    res_res = client.get(f"/results/{aid}")
+    assert res_res.status_code == 200
+    assert b"flow_test.csv" in res_res.data
+
+
 

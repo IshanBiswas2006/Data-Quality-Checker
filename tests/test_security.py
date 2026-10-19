@@ -1,19 +1,43 @@
 import io
+import os
 import pytest
 from app import create_app
 from app.services.session_store import SessionStore
 from app.services.rate_limiter import SimpleRateLimiter
 from app.services.export_service import ExportService
+from app.services.user_service import init_db, create_user
 import pandas as pd
 
 @pytest.fixture
-def client():
+def client(tmp_path):
+    test_db = str(tmp_path / "test_security.db")
     app = create_app(config_name="testing")
     app.config["TESTING"] = True
+    app.config["USERS_DB_PATH"] = test_db
+    init_db(test_db)
     SessionStore.clear_all()
     SimpleRateLimiter.reset()
     with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["csrf_token"] = "test-csrf-token-12345"
         yield client
+
+    if os.path.exists(test_db):
+        try:
+            os.remove(test_db)
+        except OSError:
+            pass
+
+@pytest.fixture
+def auth_client(client):
+    client.post("/signup", data={
+        "csrf_token": "test-csrf-token-12345",
+        "name": "Sec Tester",
+        "email": "sectester@example.com",
+        "password": "Password123!",
+        "confirm_password": "Password123!"
+    })
+    return client
 
 def test_security_headers_present(client):
     response = client.get("/")
@@ -53,12 +77,12 @@ def test_privacy_and_terms_pages(client):
     assert resp_terms.status_code == 200
     assert b"Terms of Service" in resp_terms.data
 
-def test_path_traversal_filename_sanitization(client):
+def test_path_traversal_filename_sanitization(auth_client):
     traversal_filename = "../../../etc/passwd.csv"
     csv_bytes = b"col1,col2\nval1,val2\n"
     data = {"file": (io.BytesIO(csv_bytes), traversal_filename)}
     
-    response = client.post(
+    response = auth_client.post(
         "/upload",
         data=data,
         content_type="multipart/form-data",
@@ -74,19 +98,19 @@ def test_path_traversal_filename_sanitization(client):
     assert "/" not in session["original_filename"]
     assert ".." not in session["original_filename"]
 
-def test_upload_rate_limiter(client):
+def test_upload_rate_limiter(auth_client):
     SimpleRateLimiter.reset()
     csv_bytes = b"col1,col2\nval1,val2\n"
     
     # Send up to limit
     for _ in range(40):
         data = {"file": (io.BytesIO(csv_bytes), "sample.csv")}
-        res = client.post("/upload", data=data, content_type="multipart/form-data", headers={"X-Requested-With": "XMLHttpRequest"})
+        res = auth_client.post("/upload", data=data, content_type="multipart/form-data", headers={"X-Requested-With": "XMLHttpRequest"})
         assert res.status_code == 200
         
     # Next request should be rate-limited (429)
     data = {"file": (io.BytesIO(csv_bytes), "sample.csv")}
-    res_blocked = client.post("/upload", data=data, content_type="multipart/form-data", headers={"X-Requested-With": "XMLHttpRequest"})
+    res_blocked = auth_client.post("/upload", data=data, content_type="multipart/form-data", headers={"X-Requested-With": "XMLHttpRequest"})
     assert res_blocked.status_code == 429
     assert "Rate limit exceeded" in res_blocked.get_json()["error"]
     assert "Retry-After" in res_blocked.headers

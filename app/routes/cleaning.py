@@ -1,4 +1,4 @@
-from flask import request, jsonify, redirect, url_for, flash, current_app
+from flask import request, jsonify, redirect, url_for, flash, current_app, g
 from app.routes import bp_cleaning
 from app.services.session_store import SessionStore
 from app.services.cleaning_service import CleaningService
@@ -7,6 +7,13 @@ from app.services.report_service import ReportService
 
 @bp_cleaning.route("/clean/<analysis_id>", methods=["POST"])
 def clean_dataset(analysis_id: str):
+    if not g.current_user:
+        return jsonify({
+            "success": False,
+            "error": "Authentication required. Please log in or sign up.",
+            "redirect": url_for("auth.login")
+        }), 401
+
     session = SessionStore.get_session(analysis_id)
     if not session:
         return jsonify({"success": False, "error": "Session expired or invalid analysis ID."}), 404
@@ -75,6 +82,13 @@ def clean_dataset(analysis_id: str):
 
 @bp_cleaning.route("/reset/<analysis_id>", methods=["POST"])
 def reset_dataset(analysis_id: str):
+    if not g.current_user:
+        return jsonify({
+            "success": False,
+            "error": "Authentication required. Please log in or sign up.",
+            "redirect": url_for("auth.login")
+        }), 401
+
     session = SessionStore.get_session(analysis_id)
     if not session:
         return jsonify({"success": False, "error": "Session expired or invalid analysis ID."}), 404

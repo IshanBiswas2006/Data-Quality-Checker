@@ -1,4 +1,4 @@
-from flask import request, redirect, url_for, jsonify, current_app, flash
+from flask import request, redirect, url_for, jsonify, current_app, flash, g
 from app.routes import bp_upload
 from app.services.file_validator import validate_uploaded_file
 from app.services.csv_reader import read_csv_file
@@ -8,6 +8,18 @@ from app.services.rate_limiter import SimpleRateLimiter
 @bp_upload.route("/upload", methods=["POST"])
 def upload_file():
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json"
+    
+    # 0. Authentication enforcement: users must be logged in before uploading files or running analysis
+    if not g.current_user:
+        login_url = url_for("auth.login", next=url_for("main.index"))
+        if is_ajax:
+            return jsonify({
+                "success": False,
+                "error": "Authentication required. Please log in or sign up before uploading files or running analysis.",
+                "redirect": login_url
+            }), 401
+        flash("Please log in or sign up before uploading files or running analysis.", "warning")
+        return redirect(login_url)
     
     # 1. Rate limiting check (e.g. 30 uploads / 10 minutes per IP)
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr) or "unknown"

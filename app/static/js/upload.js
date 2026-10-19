@@ -10,6 +10,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!dropZone || !fileInput) return;
 
+  const isAuthenticated = uploadForm?.dataset.authenticated === "true";
+  const loginUrl = uploadForm?.dataset.loginUrl || "/login";
+
+  function requireAuth(e) {
+    if (!isAuthenticated) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      window.location.href = loginUrl;
+      return true;
+    }
+    return false;
+  }
+
   const MAX_SIZE_BYTES = 16 * 1024 * 1024; // 16 MB
 
   // Drag and drop events
@@ -17,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     dropZone.addEventListener(eventName, (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (requireAuth(e)) return;
       dropZone.classList.add("drag-over");
     });
   });
@@ -30,23 +46,39 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   dropZone.addEventListener("drop", (e) => {
+    if (requireAuth(e)) return;
     const files = e.dataTransfer.files;
-    if (files.length > 0) {
+    if (files && files.length > 0) {
       handleFileSelected(files[0]);
     }
   });
 
-  dropZone.addEventListener("click", () => {
+  dropZone.addEventListener("click", (e) => {
+    if (requireAuth(e)) return;
     fileInput.click();
   });
 
-  fileInput.addEventListener("change", () => {
+  dropZone.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      if (requireAuth(e)) return;
+      fileInput.click();
+    }
+  });
+
+  fileInput.addEventListener("click", (e) => {
+    if (requireAuth(e)) return;
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    if (requireAuth(e)) return;
     if (fileInput.files.length > 0) {
       handleFileSelected(fileInput.files[0]);
     }
   });
 
   function handleFileSelected(file) {
+    if (requireAuth()) return;
+
     if (!file.name.toLowerCase().endsWith(".csv")) {
       showToast("Only .csv files are supported. Please select a CSV file.", "error");
       fileInput.value = "";
@@ -83,9 +115,16 @@ document.addEventListener("DOMContentLoaded", () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   }
 
-  // Handle form submission with spinner
+  // Handle form submission with spinner & auth check
+  if (uploadBtn) {
+    uploadBtn.addEventListener("click", (e) => {
+      if (requireAuth(e)) return;
+    });
+  }
+
   if (uploadForm) {
-    uploadForm.addEventListener("submit", () => {
+    uploadForm.addEventListener("submit", (e) => {
+      if (requireAuth(e)) return;
       uploadBtn.disabled = true;
       uploadBtn.innerHTML = `<span class="spinner"></span> Processing CSV...`;
     });
@@ -95,6 +134,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sampleBtn) {
     sampleBtn.addEventListener("click", async (e) => {
       e.preventDefault();
+      if (requireAuth(e)) return;
+
       sampleBtn.disabled = true;
       sampleBtn.textContent = "Loading sample...";
       

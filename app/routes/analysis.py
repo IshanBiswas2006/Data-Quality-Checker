@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, request, redirect, url_for, flash, current_app
+from flask import render_template, jsonify, request, redirect, url_for, flash, current_app, g
 from app.routes import bp_analysis
 from app.services.session_store import SessionStore
 from app.services.quality_analyzer import analyze_dataset
@@ -7,6 +7,18 @@ from app.services.report_service import ReportService
 
 @bp_analysis.route("/results/<analysis_id>", methods=["GET"])
 def results(analysis_id: str):
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json"
+    if not g.current_user:
+        login_url = url_for("auth.login", next=request.path)
+        if is_ajax:
+            return jsonify({
+                "success": False,
+                "error": "Authentication required. Please log in or sign up to view analysis results.",
+                "redirect": login_url
+            }), 401
+        flash("Please log in or sign up to view analysis results.", "warning")
+        return redirect(login_url)
+
     session = SessionStore.get_session(analysis_id)
     if not session:
         flash("Session expired or invalid analysis ID. Please upload your CSV file again.", "warning")
@@ -64,6 +76,13 @@ def results(analysis_id: str):
 
 @bp_analysis.route("/analyze/<analysis_id>", methods=["POST"])
 def rerun_analysis(analysis_id: str):
+    if not g.current_user:
+        return jsonify({
+            "success": False,
+            "error": "Authentication required. Please log in or sign up.",
+            "redirect": url_for("auth.login")
+        }), 401
+
     session = SessionStore.get_session(analysis_id)
     if not session:
         return jsonify({"error": "Session not found or expired."}), 404
@@ -80,6 +99,13 @@ def rerun_analysis(analysis_id: str):
 
 @bp_analysis.route("/validate-rules/<analysis_id>", methods=["POST"])
 def validate_rules(analysis_id: str):
+    if not g.current_user:
+        return jsonify({
+            "success": False,
+            "error": "Authentication required. Please log in or sign up.",
+            "redirect": url_for("auth.login")
+        }), 401
+
     session = SessionStore.get_session(analysis_id)
     if not session:
         return jsonify({"error": "Session not found or expired."}), 404
