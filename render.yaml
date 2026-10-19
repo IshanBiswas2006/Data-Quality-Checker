@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: data-quality-checker
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: CLOUDFLARE_TURNSTILE_ENABLED
+        value: "true"
+      - key: CLOUDFLARE_TURNSTILE_SITE_KEY
+        sync: false
+      - key: CLOUDFLARE_TURNSTILE_SECRET_KEY
+        sync: false
