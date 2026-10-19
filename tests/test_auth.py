@@ -367,3 +367,55 @@ def test_dynamic_header_ui(client):
     # Profile page has logout:
     prof = client.get("/profile")
     assert b"profileLogoutBtn" in prof.data
+
+def test_login_and_signup_pages_render_turnstile(client):
+    res_login = client.get("/login")
+    assert res_login.status_code == 200
+    assert b"cf-turnstile" in res_login.data
+    assert b"securityCaptchaCard" in res_login.data
+    assert b"Verify you are human" in res_login.data
+    assert b"CLOUDFLARE" in res_login.data
+    # Ensures test keys do not load external script that triggers red message and auto-tick
+    assert b"challenges.cloudflare.com/turnstile/v0/api.js" not in res_login.data
+
+    res_signup = client.get("/signup")
+    assert res_signup.status_code == 200
+    assert b"cf-turnstile" in res_signup.data
+    assert b"securityCaptchaCard" in res_signup.data
+    assert b"Verify you are human" in res_signup.data
+    assert b"CLOUDFLARE" in res_signup.data
+    assert b"challenges.cloudflare.com/turnstile/v0/api.js" not in res_signup.data
+
+def test_login_fails_on_invalid_turnstile(client):
+    res = client.post("/login", data={
+        "csrf_token": "test-csrf-token-12345",
+        "email": "user@example.com",
+        "password": "Password123!",
+        "cf-turnstile-response": "test-fail-turnstile"
+    })
+    assert res.status_code == 400
+    assert b"CAPTCHA verification failed" in res.data
+
+def test_signup_fails_on_invalid_turnstile(client):
+    res = client.post("/signup", data={
+        "csrf_token": "test-csrf-token-12345",
+        "name": "Failed Captcha User",
+        "email": "failed-captcha@example.com",
+        "password": "Password123!",
+        "confirm_password": "Password123!",
+        "cf-turnstile-response": "test-fail-turnstile"
+    })
+    assert res.status_code == 400
+    assert b"CAPTCHA verification failed" in res.data
+
+def test_login_fails_on_empty_captcha(client):
+    res = client.post("/login", data={
+        "csrf_token": "test-csrf-token-12345",
+        "email": "user@example.com",
+        "password": "Password123!",
+        "cf-turnstile-response": ""
+    })
+    assert res.status_code == 400
+    assert b"Please complete the security check" in res.data
+
+

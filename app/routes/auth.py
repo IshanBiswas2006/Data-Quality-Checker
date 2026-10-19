@@ -24,8 +24,24 @@ from app.services.user_service import (
     AVATAR_COLORS
 )
 from app.services.session_store import SessionStore
+from app.services.turnstile_service import (
+    get_turnstile_config,
+    verify_turnstile_response,
+    generate_interactive_token
+)
 
 bp_auth = Blueprint("auth", __name__)
+
+def get_turnstile_context():
+    cfg = get_turnstile_config()
+    csrf = session.get("csrf_token", "")
+    return {
+        "turnstile_site_key": cfg["site_key"],
+        "turnstile_enabled": cfg["enabled"],
+        "is_test_key": cfg["is_test_key"],
+        "interactive_token": generate_interactive_token(csrf)
+    }
+
 
 def is_safe_url(target: str) -> bool:
     if not target:
@@ -69,13 +85,32 @@ def signup():
         csrf_token = request.form.get("csrf_token")
         if not validate_csrf(csrf_token):
             flash("Invalid security token. Please try again.", "error")
-            return render_template("auth/signup.html", next=next_url), 400
+            return render_template(
+                "auth/signup.html",
+                next=next_url,
+                **get_turnstile_context()
+            ), 400
 
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
         avatar_color = request.form.get("avatar_color")
+
+        # Verify Cloudflare Turnstile CAPTCHA
+        cf_response = request.form.get("cf-turnstile-response")
+        valid, cf_err = verify_turnstile_response(cf_response, csrf_token=csrf_token, remote_ip=request.remote_addr)
+        if not valid:
+            flash(cf_err or "Security verification failed. Please try again.", "error")
+            return render_template(
+                "auth/signup.html",
+                name=name,
+                email=email,
+                avatar_color=avatar_color,
+                avatar_colors=AVATAR_COLORS,
+                next=next_url,
+                **get_turnstile_context()
+            ), 400
 
         if password != confirm_password:
             flash("Passwords do not match.", "error")
@@ -85,7 +120,8 @@ def signup():
                 email=email,
                 avatar_color=avatar_color,
                 avatar_colors=AVATAR_COLORS,
-                next=next_url
+                next=next_url,
+                **get_turnstile_context()
             ), 400
 
         user, err = create_user(
@@ -103,7 +139,8 @@ def signup():
                 email=email,
                 avatar_color=avatar_color,
                 avatar_colors=AVATAR_COLORS,
-                next=next_url
+                next=next_url,
+                **get_turnstile_context()
             ), 400
 
         # Automatic login after successful registration
@@ -118,7 +155,8 @@ def signup():
     return render_template(
         "auth/signup.html",
         avatar_colors=AVATAR_COLORS,
-        next=next_url
+        next=next_url,
+        **get_turnstile_context()
     )
 
 @bp_auth.route("/login", methods=["GET", "POST"])
@@ -132,16 +170,37 @@ def login():
         csrf_token = request.form.get("csrf_token")
         if not validate_csrf(csrf_token):
             flash("Invalid security token. Please try again.", "error")
-            return render_template("auth/login.html", next=next_url), 400
+            return render_template(
+                "auth/login.html",
+                next=next_url,
+                **get_turnstile_context()
+            ), 400
 
         email = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         remember_me = bool(request.form.get("remember_me"))
 
+        # Verify Cloudflare Turnstile CAPTCHA
+        cf_response = request.form.get("cf-turnstile-response")
+        valid, cf_err = verify_turnstile_response(cf_response, csrf_token=csrf_token, remote_ip=request.remote_addr)
+        if not valid:
+            flash(cf_err or "Security verification failed. Please try again.", "error")
+            return render_template(
+                "auth/login.html",
+                email=email,
+                next=next_url,
+                **get_turnstile_context()
+            ), 400
+
         user, err = authenticate_user(email=email, password=password)
         if err or not user:
             flash(err or "Invalid email or password.", "error")
-            return render_template("auth/login.html", email=email, next=next_url), 401
+            return render_template(
+                "auth/login.html",
+                email=email,
+                next=next_url,
+                **get_turnstile_context()
+            ), 401
 
         session["user_id"] = user["id"]
         session.permanent = remember_me
@@ -151,7 +210,11 @@ def login():
             return redirect(next_url)
         return redirect(url_for("main.index"))
 
-    return render_template("auth/login.html", next=next_url)
+    return render_template(
+        "auth/login.html",
+        next=next_url,
+        **get_turnstile_context()
+    )
 
 @bp_auth.route("/logout", methods=["GET", "POST"])
 def logout():

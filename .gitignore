@@ -16,6 +16,7 @@ instance/
 temp_uploads/
 *.sqlite
 *.db
+.env
 memory.env
 
 # OS files
