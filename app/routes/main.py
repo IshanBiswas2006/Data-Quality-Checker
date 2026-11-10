@@ -1,4 +1,4 @@
-from flask import render_template, jsonify, Response, url_for, request
+from flask import render_template, jsonify, Response, request
 from app.routes import bp_main
 
 @bp_main.route("/", methods=["GET"])

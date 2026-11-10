@@ -15,7 +15,6 @@ from flask import (
 from app.services.user_service import (
     create_user,
     authenticate_user,
-    get_user_by_id,
     update_profile,
     change_password,
     save_user_analysis,
@@ -26,20 +25,17 @@ from app.services.user_service import (
 from app.services.session_store import SessionStore
 from app.services.turnstile_service import (
     get_turnstile_config,
-    verify_turnstile_response,
-    generate_interactive_token
+    verify_turnstile_response
 )
 
 bp_auth = Blueprint("auth", __name__)
 
 def get_turnstile_context():
     cfg = get_turnstile_config()
-    csrf = session.get("csrf_token", "")
     return {
         "turnstile_site_key": cfg["site_key"],
         "turnstile_enabled": cfg["enabled"],
-        "is_test_key": cfg["is_test_key"],
-        "interactive_token": generate_interactive_token(csrf)
+        "is_test_key": cfg["is_test_key"]
     }
 
 

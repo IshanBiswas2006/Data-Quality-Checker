@@ -3,7 +3,7 @@ import os
 import pytest
 from app import create_app
 from app.services.session_store import SessionStore
-from app.services.user_service import init_db, create_user
+from app.services.user_service import init_db
 
 @pytest.fixture
 def client(tmp_path):

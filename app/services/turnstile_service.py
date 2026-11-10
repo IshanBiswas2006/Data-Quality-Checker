@@ -1,19 +1,20 @@
 import os
-import time
-import hmac
-import hashlib
 import urllib.request
 import urllib.parse
 import json
 from typing import Tuple, Optional, Dict, Any
-from flask import current_app, session
+from flask import current_app
 
-# Cloudflare official testing keys:
 DEFAULT_TEST_SITE_KEY = "1x00000000000000000000AA"
 DEFAULT_TEST_SECRET_KEY = "1x0000000000000000000000000000000AA"
 TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 
 def get_turnstile_config() -> Dict[str, Any]:
+    """
+    Returns the Cloudflare Turnstile configuration.
+    If real keys are not supplied in production/development, Turnstile can be disabled
+    in favor of standard CSRF protection and server-side rate-limiting.
+    """
     if current_app:
         enabled = current_app.config.get("CLOUDFLARE_TURNSTILE_ENABLED", True)
         site_key = current_app.config.get("CLOUDFLARE_TURNSTILE_SITE_KEY", DEFAULT_TEST_SITE_KEY)
@@ -23,7 +24,6 @@ def get_turnstile_config() -> Dict[str, Any]:
         site_key = os.environ.get("CLOUDFLARE_TURNSTILE_SITE_KEY", DEFAULT_TEST_SITE_KEY)
         secret_key = os.environ.get("CLOUDFLARE_TURNSTILE_SECRET_KEY", DEFAULT_TEST_SECRET_KEY)
 
-    # Use interactive native widget if test keys are active (removes Cloudflare's red test disclaimer & forces manual click)
     is_test_key = (site_key == DEFAULT_TEST_SITE_KEY)
 
     return {
@@ -33,44 +33,20 @@ def get_turnstile_config() -> Dict[str, Any]:
         "is_test_key": is_test_key
     }
 
-def generate_interactive_token(csrf_token: str) -> str:
-    secret = (current_app.config.get("SECRET_KEY", "default-key") if current_app else "default-key").encode("utf-8")
-    ts = str(int(time.time()))
-    payload = f"{csrf_token}:{ts}"
-    sig = hmac.new(secret, payload.encode("utf-8"), hashlib.sha256).hexdigest()
-    return f"cf-interactive:{payload}:{sig}"
-
-def verify_interactive_token(token: str, csrf_token: str) -> bool:
-    if not token or not token.startswith("cf-interactive:"):
-        return False
-    parts = token.split(":")
-    if len(parts) != 4:
-        return False
-    _, token_csrf, ts_str, sig = parts
-    if token_csrf != csrf_token:
-        return False
-    try:
-        ts = int(ts_str)
-        # 15 minutes validity
-        if abs(time.time() - ts) > 900:
-            return False
-    except ValueError:
-        return False
-    secret = (current_app.config.get("SECRET_KEY", "default-key") if current_app else "default-key").encode("utf-8")
-    payload = f"{token_csrf}:{ts_str}"
-    expected_sig = hmac.new(secret, payload.encode("utf-8"), hashlib.sha256).hexdigest()
-    return hmac.compare_digest(sig, expected_sig)
-
 def verify_turnstile_response(
     response_token: Optional[str],
     csrf_token: Optional[str] = None,
     remote_ip: Optional[str] = None
 ) -> Tuple[bool, Optional[str]]:
+    """
+    Verifies Cloudflare Turnstile CAPTCHA response token against Cloudflare's siteverify endpoint.
+    When Turnstile is disabled or during automated testing, appropriate bypasses/mocks are respected.
+    """
     cfg = get_turnstile_config()
     if not cfg["enabled"]:
         return True, None
 
-    # In testing mode (e.g. automated tests)
+    # In testing mode (e.g. automated pytest test suite)
     if current_app and current_app.config.get("TESTING"):
         if response_token == "test-fail-turnstile":
             return False, "CAPTCHA verification failed. Please try again."
@@ -85,18 +61,11 @@ def verify_turnstile_response(
 
     token = response_token.strip()
 
-    # Check interactive HMAC signed token
-    if token.startswith("cf-interactive:"):
-        active_csrf = csrf_token or session.get("csrf_token", "")
-        if verify_interactive_token(token, active_csrf):
-            return True, None
-        return False, "Security verification failed or expired. Please try again."
-
-    # If test key is in use, accept any non-empty test response
+    # If Cloudflare test key is active, accept non-empty response token
     if cfg["is_test_key"]:
         return True, None
 
-    # If real Cloudflare key is configured, verify with Cloudflare API
+    # Verify with Cloudflare Siteverify API
     post_data = {
         "secret": cfg["secret_key"],
         "response": token

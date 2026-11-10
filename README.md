@@ -1,34 +1,13 @@
-<div align="center">
-
 # Data Quality Checker
 
-**Upload a CSV. Find what is wrong with it. Clean it safely. Export the result.**
+**Tabular data inspection, validation, and non-destructive cleaning for CSV datasets.**
 
-A Flask web application that profiles tabular data for missing values, duplicates, type anomalies and rule violations, then applies non-destructive cleaning on a working copy with a full audit trail.
+Data Quality Checker profiles datasets for missing values, duplicates, and semantic data type anomalies, evaluates configurable validation rules, and applies cleaning operations on an isolated working copy with a complete audit trail.
 
-<br>
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Render-46E3B7?style=flat-square&logo=render&logoColor=white)](https://data-quality-checker-93bf.onrender.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://data-quality-checker-93bf.onrender.com/)
-[![Source](https://img.shields.io/badge/Source-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/IshanBiswas2006/Data-Quality-Checker)
-
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-3.1+-000000?style=flat-square&logo=flask&logoColor=white)
-![pandas](https://img.shields.io/badge/pandas-2.2+-150458?style=flat-square&logo=pandas&logoColor=white)
-![NumPy](https://img.shields.io/badge/NumPy-2.0+-013243?style=flat-square&logo=numpy&logoColor=white)
-![Matplotlib](https://img.shields.io/badge/Matplotlib-3.9+-11557C?style=flat-square)
-![SQLite](https://img.shields.io/badge/SQLite-users-003B57?style=flat-square&logo=sqlite&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-62_passing-2EA44F?style=flat-square&logo=pytest&logoColor=white)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
-
-[Live Demo](https://data-quality-checker-93bf.onrender.com/) &nbsp;·&nbsp;
-[Features](#features) &nbsp;·&nbsp;
-[How It Works](#how-it-works) &nbsp;·&nbsp;
-[Quick Start](#quick-start) &nbsp;·&nbsp;
-[Configuration](#configuration) &nbsp;·&nbsp;
-[Deployment](#deployment) &nbsp;·&nbsp;
-[Testing](#testing)
-
-</div>
+[Live Demo](https://data-quality-checker-93bf.onrender.com/) · [Features](#features) · [How It Works](#how-it-works) · [Quick Start](#quick-start) · [Configuration](#configuration) · [Testing](#testing)
 
 ---
 

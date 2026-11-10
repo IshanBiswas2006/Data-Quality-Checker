@@ -1,7 +1,7 @@
 import os
 import pytest
 from app import create_app
-from app.services.user_service import get_db, init_db, create_user
+from app.services.user_service import get_db, init_db
 from app.services.session_store import SessionStore
 
 @pytest.fixture
@@ -372,19 +372,12 @@ def test_login_and_signup_pages_render_turnstile(client):
     res_login = client.get("/login")
     assert res_login.status_code == 200
     assert b"cf-turnstile" in res_login.data
-    assert b"securityCaptchaCard" in res_login.data
-    assert b"Verify you are human" in res_login.data
-    assert b"CLOUDFLARE" in res_login.data
-    # Ensures test keys do not load external script that triggers red message and auto-tick
-    assert b"challenges.cloudflare.com/turnstile/v0/api.js" not in res_login.data
+    assert b"challenges.cloudflare.com/turnstile/v0/api.js" in res_login.data
 
     res_signup = client.get("/signup")
     assert res_signup.status_code == 200
     assert b"cf-turnstile" in res_signup.data
-    assert b"securityCaptchaCard" in res_signup.data
-    assert b"Verify you are human" in res_signup.data
-    assert b"CLOUDFLARE" in res_signup.data
-    assert b"challenges.cloudflare.com/turnstile/v0/api.js" not in res_signup.data
+    assert b"challenges.cloudflare.com/turnstile/v0/api.js" in res_signup.data
 
 def test_login_fails_on_invalid_turnstile(client):
     res = client.post("/login", data={

@@ -1,5 +1,5 @@
 import io
-from flask import send_file, flash, redirect, url_for, jsonify, request, g
+from flask import send_file, flash, redirect, url_for, request, g
 from app.routes import bp_download
 from app.services.session_store import SessionStore
 from app.services.export_service import ExportService

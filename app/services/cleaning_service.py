@@ -1,6 +1,5 @@
 from typing import Dict, Any, List, Tuple, Optional
 import pandas as pd
-import numpy as np
 
 class CleaningService:
     """

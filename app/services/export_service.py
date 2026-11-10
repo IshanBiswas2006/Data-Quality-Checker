@@ -1,5 +1,4 @@
 import io
-import re
 from typing import Tuple, Optional
 import pandas as pd
 from werkzeug.utils import secure_filename

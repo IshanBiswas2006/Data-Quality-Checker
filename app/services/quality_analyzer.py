@@ -1,6 +1,5 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 import pandas as pd
-import numpy as np
 import re
 
 def infer_column_type(series: pd.Series) -> str:

@@ -5,7 +5,7 @@ from app import create_app
 from app.services.session_store import SessionStore
 from app.services.rate_limiter import SimpleRateLimiter
 from app.services.export_service import ExportService
-from app.services.user_service import init_db, create_user
+from app.services.user_service import init_db
 import pandas as pd
 
 @pytest.fixture
